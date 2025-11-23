@@ -20,3 +20,139 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".git-rewrite",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "__pycache__",
+    "__pypackages__",
+]
+line-length = 140
+indent-width = 4
+target-version = "py310"
+
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
+select = [
+    "F",
+    "E",
+    "W",
+    "C90",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "ANN",
+    "ASYNC",
+    "S",
+    "BLE",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "ISC",
+    "ICN",
+    "LOG",
+    "G",
+    "INP",
+    "PIE",
+    "T20",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SLOT",
+    "SIM",
+    "TID",
+    "TCH",
+    "INT",
+    "ARG",
+    "PTH",
+    "ERA",
+    "PGH",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "TRY",
+    "FLY",
+    "PERF",
+    "RUF",
+    "D213",
+]
+ignore = [
+    "B008",
+    "D101",
+    "D104",
+    "D107",
+    "D100",
+    "D212",
+    "D300",
+    "COM812",
+    "T201",
+    "RUF002",
+    "ERA001",
+    "INP001",
+    "RUF012",
+    "UP009",
+    "PLR0913",
+    "SLF001",
+
+    "D102",
+    "D103",
+    "D105",
+    "D106",
+    "D202",
+]
+fixable = ["ALL"]
+unfixable = []
+
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.TypedDict".msg = "Use typing_extensions.TypedDict instead."
+
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+docstring-quotes = "single"
+multiline-quotes = "single"
+
+
+[tool.ruff.lint.isort]
+force-to-top = ["typing"]
+lines-after-imports = 2
+
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "lf"
+skip-magic-trailing-comma = false
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.6"
+

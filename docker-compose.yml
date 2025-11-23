@@ -3,8 +3,18 @@ version: '3.8'
 services:
   web:
     build: .
+    user: appuser
     ports:
       - "8080:8080"
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        make migrate &&
+        echo 'Starting application...' &&
+        uvicorn src.main:app --host 0.0.0.0 --port 8080
+      "
     depends_on:
       - postgres
     environment:
@@ -20,5 +30,8 @@ services:
       - POSTGRES_USER=test_task
       - POSTGRES_PASSWORD=test_task
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - postgres-avito-test:/var/lib/postgresql/data
     restart: unless-stopped
+
+volumes:
+  postgres-avito-test:

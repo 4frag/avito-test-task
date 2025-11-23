@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from src.db.models import User, Team
+
+from src.db.models import Team, User
 
 
 @dataclass

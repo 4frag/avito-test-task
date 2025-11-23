@@ -1,5 +1,7 @@
 FROM python:3.13-slim
 
+RUN apt update && apt install -y --no-install-recommends \
+    make
 RUN pip install poetry
 
 WORKDIR /app
@@ -16,8 +18,10 @@ RUN poetry install --no-ansi --no-root
 RUN addgroup --system --gid 1001 appuser && \
     adduser --system --uid 1001 --gid 1001 appuser
 
-COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser . .
 USER appuser
 
-EXPOSE 8080
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# RUN make migrate
+
+# EXPOSE 8080
+# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]

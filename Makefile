@@ -1,0 +1,2 @@
+migrate:
+	alembic upgrade head
