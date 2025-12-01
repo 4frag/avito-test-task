@@ -1,30 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.database import get_db
-from src.schemas.base import ErrorDetailSchema, ErrorResponseSchema
+from src.db.database import get_db_connection
+from src.schemas.base import ErrorDetailSchema
 from src.schemas.pull_requests import MergePRRequest, PullRequest, PullRequestCreateRequestSchema
 from src.services.exceptions import PRAlreadyExistsError, PRDoesNotExistError
 from src.services.pull_requests import PullRequestService
-from src.types import ErrorCode
+from src.type_defs import ErrorCode
 
+from .exceptions import NotFoundError
 from .tags import APITags
 
 
 router = APIRouter(prefix='/pullRequests', tags=[APITags.PULL_REQUESTS])
 
 
-@router.post('/create')
-async def create_pr(request: PullRequestCreateRequestSchema, db: AsyncSession = Depends(get_db)) -> PullRequest:
-    service = PullRequestService(db)
+@router.post('/create', status_code=201)
+async def create_pr(request: PullRequestCreateRequestSchema, db: AsyncSession = Depends(get_db_connection)) -> PullRequest:
     try:
-        pr = await service.create_pr_with_auto_reviewers({
-            'id': request.pull_request_id,
-            'name': request.pull_request_name,
-            'author_id': request.author_id
-        })
-        response = PullRequest(
+        pr = await PullRequestService(db).create_pr_with_auto_reviewers(
+            id=request.pull_request_id,
+            name=request.pull_request_name,
+            author_id=request.author_id
+        )
+        return PullRequest(
             pull_request_id=pr.id,
             pull_request_name=pr.name,
             author_id=pr.author_id,
@@ -32,19 +31,14 @@ async def create_pr(request: PullRequestCreateRequestSchema, db: AsyncSession = 
             status=pr.status,
             created_at=pr.created_at,
             merged_at=pr.merged_at
-        ).model_dump()
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content=response
         )
     except PRAlreadyExistsError as e:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=ErrorResponseSchema(error=ErrorDetailSchema(
+        raise NotFoundError(
+            detail=ErrorDetailSchema(
                 code=ErrorCode.PR_EXISTS,
                 message=str(e)
-            )).model_dump()
-        )
+            )
+        ) from e
 
 
 @router.post(
@@ -79,13 +73,13 @@ async def create_pr(request: PullRequestCreateRequestSchema, db: AsyncSession = 
 )
 async def merge_pull_request(
         request: MergePRRequest,
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(get_db_connection),
         ) -> PullRequest:
     pr_service = PullRequestService(db)
     try:
         pr = await pr_service.merge_pr(request.pull_request_id)
 
-        response = PullRequest(
+        return PullRequest(
             pull_request_id=pr.id,
             pull_request_name=pr.name,
             author_id=pr.author_id,
@@ -93,18 +87,11 @@ async def merge_pull_request(
             status=pr.status,
             created_at=pr.created_at,
             merged_at=pr.merged_at
-        ).model_dump()
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=response
         )
     except PRDoesNotExistError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponseSchema(
-                error=ErrorDetailSchema(
-                    code=ErrorCode.NOT_FOUND,
-                    message=str(e)
-                )
-            ).model_dump()
+        raise NotFoundError(
+            detail=ErrorDetailSchema(
+                code=ErrorCode.NOT_FOUND,
+                message=str(e)
+            )
         ) from e

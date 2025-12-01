@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer
 
-from src.types import PRStatus
+from type_defs import PRStatus
 
 
 class PullRequestShortSchema(BaseModel):
@@ -13,6 +13,8 @@ class PullRequestShortSchema(BaseModel):
 
 
 class PullRequest(PullRequestShortSchema):
+    model_config = ConfigDict(from_attributes=True)
+
     assigned_reviewers: list[str]
     created_at: datetime | None = None
     merged_at: datetime | None = None

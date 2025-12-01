@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, ForeignKey, String, Table
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from src.types import PRStatus
+from type_defs import PRStatus
 
 
 class Base(DeclarativeBase):
@@ -15,7 +15,7 @@ class Team(Base):
 
     name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
 
-    members: Mapped[list['User']] = relationship(  # ← изменил название
+    members: Mapped[list['User']] = relationship(
         'User',
         back_populates='team',
         foreign_keys='User.team_name',
@@ -44,7 +44,7 @@ class User(Base):
         back_populates='members'
     )
 
-    pull_requests: Mapped[list['PullRequest']] = relationship(  # ← изменил название
+    pull_requests: Mapped[list['PullRequest']] = relationship(
         'PullRequest',
         back_populates='author',
         foreign_keys='PullRequest.author_id'

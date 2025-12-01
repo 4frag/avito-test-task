@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.models import PullRequest, User
 from src.db.repositories.pull_requests import PullRequestRepository
 from src.db.repositories.users import UserRepository
-from src.types import PRStatus
+from type_defs import PRStatus
 
 from .exceptions import (
     AuthorCannotBeAReviewerError,
@@ -31,32 +31,33 @@ class PullRequestService:
         self.user_repo = UserRepository(db)
 
     async def auto_assign_reviewers(self, pr_id: str) -> PullRequest:
-        pr = await self.pull_request_repo.get_by_id_with_reviewers_and_author(pr_id)
+        pr = await self.pull_request_repo.get_where(
+            PullRequest.id == pr_id,
+            join_=[PullRequest.assigned_reviewers]
+        )
         if not pr:
             raise PRDoesNotExistError(pr_id)
 
         if pr.status != PRStatus.OPEN:
             raise PRNotModifiableError
 
-        author = await self.user_repo.get_by_pk(pr.author_id)
+        author = await self.user_repo.get_where(User.user_id == pr.author_id)
         if not author:
             raise UserDoesNotExistError(pr.author_id)
 
-        available_reviewers = await self.user_repo.get_where(
+        available_reviewers = await self.user_repo.list_where(
             User.team_name == author.team_name,
             User.is_active is True,
             User.user_id != author.user_id
         )
-        print(f'{available_reviewers=}')
 
         reviewers_to_assign = available_reviewers[:2]
-        print(f'{reviewers_to_assign=}')
         pr.assigned_reviewers = reviewers_to_assign
 
         await self.db.commit()
         return pr
 
-    async def create_pr_with_auto_reviewers(self, pr_data: dict) -> PullRequest:
+    async def create_pr_with_auto_reviewers(self, **pr_data: dict) -> PullRequest:
         try:
             pr = await self.pull_request_repo.create(**pr_data)
             return await self.auto_assign_reviewers(pr.id)
@@ -74,7 +75,10 @@ class PullRequestService:
         old_reviewer_id: str,
         new_reviewer_id: str
     ) -> PullRequest:
-        pr = await self.pull_request_repo.get_by_id_with_reviewers_and_author(pr_id)
+        pr = await self.pull_request_repo.get_where(
+            PullRequest.id == pr_id,
+            join_=[PullRequest.assigned_reviewers]
+        )
         if not pr:
             raise PRDoesNotExistError(pr_id)
 
@@ -120,7 +124,10 @@ class PullRequestService:
         if len(reviewer_ids) > MAX_REVIEWERS_COUNT:
             raise CannotAssignMoreReviewersError(MAX_REVIEWERS_COUNT)
 
-        pr = await self.pull_request_repo.get_by_id_with_reviewers(pr_id)
+        pr = await self.pull_request_repo.get_where(
+            PullRequest.id == pr_id,
+            join_=[PullRequest.author]
+        )
         if not pr:
             raise PRDoesNotExistError(pr_id)
 
@@ -153,7 +160,10 @@ class PullRequestService:
         return pr
 
     async def merge_pr(self, pr_id: str) -> PullRequest:
-        pr = await self.pull_request_repo.get_by_id_with_reviewers_and_author(pr_id)
+        pr = await self.pull_request_repo.get_where(
+            PullRequest.id == pr_id,
+            join_=[PullRequest.assigned_reviewers]
+        )
         if not pr:
             raise PRDoesNotExistError(pr_id)
 

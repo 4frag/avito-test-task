@@ -6,7 +6,7 @@ from src.db.database import get_db_connection
 from src.schemas.base import ErrorDetailSchema, ErrorResponseSchema
 from src.schemas.users import UserGetReviewResponse, UserSchema, UserSetActiveRequestSchema
 from src.services.users import UserService
-from src.types import ErrorCode
+from type_defs import ErrorCode
 
 from .exceptions import NotFoundError
 

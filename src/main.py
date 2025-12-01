@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.api import teams, users
+from src.api import pull_requests, teams, users
 from src.db.database import get_db_connection, init_db, stop_db
 from src.schemas.base import ErrorResponseSchema
 
@@ -16,13 +16,11 @@ from src.schemas.base import ErrorResponseSchema
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any, Any]:
     print('Application started')
-    app.state.db_pool, app.state.db_engine  = await init_db()
-    # app.state.db_pool = await init_db()
+    app.state.db_pool, app.state.db_engine = await init_db()
     yield
 
     if app.state.db_engine:
         await stop_db(app.state.db_engine)
-        # await stop_db(app.state.db_pool)
     print('Application stopped')
 
 
@@ -36,7 +34,7 @@ app.add_exception_handler(HTTPException, httpexception_handler)
 
 app.include_router(users.router)
 app.include_router(teams.router)
-# app.include_router(pull_requests.router)
+app.include_router(pull_requests.router)
 
 
 @app.get('/health')

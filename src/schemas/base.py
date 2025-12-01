@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from src.types import ErrorCode
+from type_defs import ErrorCode
 
 
 # Error Schemas

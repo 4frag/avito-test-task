@@ -6,7 +6,7 @@ from src.schemas.base import ErrorDetailSchema, ErrorResponseSchema
 from src.schemas.teams import TeamSchema
 from src.services.exceptions import TeamAlreadyExistsError
 from src.services.teams import TeamService
-from src.types import ErrorCode
+from type_defs import ErrorCode
 
 from .exceptions import BadRequestError, NotFoundError
 from .tags import APITags
