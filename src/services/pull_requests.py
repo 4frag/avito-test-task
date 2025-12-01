@@ -42,9 +42,9 @@ class PullRequestService:
         if not author:
             raise UserDoesNotExistError(pr.author_id)
 
-        available_reviewers = await self.user_repo.filter_by(
+        available_reviewers = await self.user_repo.get_where(
             User.team_name == author.team_name,
-            User.is_active == True,  # noqa: E712
+            User.is_active is True,
             User.user_id != author.user_id
         )
         print(f'{available_reviewers=}')

@@ -3,11 +3,12 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.database import get_db
+from src.schemas.base import ErrorDetailSchema, ErrorResponseSchema
+from src.schemas.pull_requests import MergePRRequest, PullRequest, PullRequestCreateRequestSchema
 from src.services.exceptions import PRAlreadyExistsError, PRDoesNotExistError
 from src.services.pull_requests import PullRequestService
 from src.types import ErrorCode
 
-from .schemas import ErrorDetailSchema, ErrorResponseSchema, MergePRRequest, PullRequest, PullRequestCreateRequestSchema
 from .tags import APITags
 
 

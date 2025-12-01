@@ -21,7 +21,7 @@ RUN addgroup --system --gid 1001 appuser && \
 COPY --chown=appuser:appuser . .
 USER appuser
 
-# RUN make migrate
+RUN make migrate
 
-# EXPOSE 8080
-# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+EXPOSE 8080
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]

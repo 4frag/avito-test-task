@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.database import get_db
-from src.services.exceptions import TeamAlreadyExistsError, TeamDoesNotExistError
+from src.db.database import get_db_connection
+from src.schemas.base import ErrorDetailSchema, ErrorResponseSchema
+from src.schemas.teams import TeamSchema
+from src.services.exceptions import TeamAlreadyExistsError
 from src.services.teams import TeamService
+from src.types import ErrorCode
 
 from .exceptions import BadRequestError, NotFoundError
-from .schemas import ErrorCode, ErrorDetailSchema, ErrorResponseSchema, TeamMemberSchema, TeamSchema
 from .tags import APITags
 
 
@@ -23,18 +25,15 @@ router = APIRouter(prefix='/teams', tags=[APITags.TEAMS])
         }
     }
 )
-async def add_team(request: TeamSchema, db: AsyncSession = Depends(get_db)) -> TeamSchema:
-    service = TeamService(db)
-
+async def add_team(request: TeamSchema, db: AsyncSession = Depends(get_db_connection)) -> TeamSchema:
     try:
-        await service.create_team_with_members(request.team_name, request.members)
+        team = await TeamService(db).create_team_with_members(request)
     except TeamAlreadyExistsError as e:
         raise BadRequestError(detail=ErrorDetailSchema(
             code=ErrorCode.TEAM_EXISTS,
             message='team_name already exists'
         )) from e
-
-    return request
+    return TeamSchema.model_validate(team)
 
 
 @router.get(
@@ -47,26 +46,13 @@ async def add_team(request: TeamSchema, db: AsyncSession = Depends(get_db)) -> T
         }
     }
 )
-async def get_team(team_name: str, db: AsyncSession = Depends(get_db)) -> TeamSchema:
-    team_service = TeamService(db)
-
-    try:
-        team_with_members = await team_service.get_team_with_members(team_name)
-    except TeamDoesNotExistError as e:
+async def get_team(team_name: str, db: AsyncSession = Depends(get_db_connection)) -> TeamSchema:
+    team = await TeamService(db).get_team_with_members(team_name)
+    if team is None:
         raise NotFoundError(
             detail=ErrorDetailSchema(
                 code=ErrorCode.TEAM_DOES_NOT_EXIST,
-                message=str(e)
+                message=f'Team {team_name} does not exist'
             )
-        ) from e
-
-    return TeamSchema(
-        team_name=team_with_members.team.name,
-        members=[
-            TeamMemberSchema(
-                user_id=member.user_id,
-                username=member.username,
-                is_active=member.is_active
-            ) for member in team_with_members.members
-        ]
-    )
+        )
+    return TeamSchema.model_validate(team)

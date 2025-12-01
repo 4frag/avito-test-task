@@ -15,6 +15,13 @@ class Team(Base):
 
     name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
 
+    members: Mapped[list['User']] = relationship(  # ← изменил название
+        'User',
+        back_populates='team',
+        foreign_keys='User.team_name',
+        lazy='noload'
+    )
+
 
 pr_reviewers = Table(
     'pr_reviewers',
@@ -32,6 +39,10 @@ class User(Base):
     is_active: Mapped[bool]
 
     team_name: Mapped[str] = mapped_column(ForeignKey('teams.name'))
+    team: Mapped['Team'] = relationship(
+        'Team',
+        back_populates='members'
+    )
 
     pull_requests: Mapped[list['PullRequest']] = relationship(  # ← изменил название
         'PullRequest',

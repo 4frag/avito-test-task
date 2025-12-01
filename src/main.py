@@ -8,23 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.api import pull_requests, teams, users
-from src.api.schemas import ErrorResponseSchema
-from src.db.database import engine, get_db
-from src.exceptions import CannotConnectToDatabaseError
+from src.api import teams, users
+from src.db.database import get_db_connection, init_db, stop_db
+from src.schemas.base import ErrorResponseSchema
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncGenerator[Any, Any, Any]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any, Any]:
     print('Application started')
-    try:
-        async with engine.connect() as conn:
-            await conn.execute(text('SELECT 1'))
-        print('Database connection verified')
-    except Exception as e:
-        raise CannotConnectToDatabaseError from e
+    app.state.db_pool, app.state.db_engine  = await init_db()
+    # app.state.db_pool = await init_db()
     yield
-    await engine.dispose()
+
+    if app.state.db_engine:
+        await stop_db(app.state.db_engine)
+        # await stop_db(app.state.db_pool)
     print('Application stopped')
 
 
@@ -38,10 +36,10 @@ app.add_exception_handler(HTTPException, httpexception_handler)
 
 app.include_router(users.router)
 app.include_router(teams.router)
-app.include_router(pull_requests.router)
+# app.include_router(pull_requests.router)
 
 
 @app.get('/health')
-async def health_check(db: AsyncSession = Depends(get_db)) -> dict:
-    await db.execute(text('SELECT 1'))
+async def health_check(conn: AsyncSession = Depends(get_db_connection)) -> dict:
+    await conn.execute(text('SELECT 1'))
     return {'status': 'healthy'}
